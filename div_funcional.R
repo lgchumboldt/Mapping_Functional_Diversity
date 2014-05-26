@@ -41,7 +41,7 @@ functional_diversity_map<-readline("Name of the functional diversity map: NO spa
 
 species_richness<-readline("Name of the species richness map: NO spaces and INCLUDE extension (Ej: Species_richness.asc): ")
 #Determine working resolution
-res<-readline("Raster resolution: ")
+res<-readline("Raster resolution in degrees: ")
 }
 
 
@@ -157,14 +157,14 @@ FDind=function(trait,abund) {
 
 ### 2- Function: Rasterize distribution maps and cut to mask extent  ###
 
-rasterize_species= function (x,mask=mascara) {
+rasterize_species= function (x,mask=mask,dist=distribution_maps_folder) {
   r<-raster(ncol=1462,nrow=624)
-  res(r)<-resolucion #resolution
-  r<-crop(r, extent(mascara))
+  res(r)<-resolution #resolution
+  r<-crop(r, extent(mask))
   values(r)<-0
-  map<-readOGR(dsn=distribution_maps_folder,layer=x)
+  map<-readOGR(dsn=dist,layer=x)
   r<-rasterize(map,r,1,update=T,background=0)
-  r<-mask(r,mascara)
+  r<-mask(r,mask)
   valor<-unique(getValues(r))
   
   if(length(valor)==1&&is.na(valor)==TRUE){
@@ -186,15 +186,10 @@ rasterize_species= function (x,mask=mascara) {
 #######################################
 ### Script begins ###
 ######################################
-#log transform all variables in trait. This depends on the traits being used! Names must be changed according to trait matrix!
-trait$L_Culmen_expuesto<-log(trait$L_Culmen_expuesto)
-trait$Ancho_Pico<-log(trait$Ancho_Pico)
-trait$L_Ala<-log(trait$L_Ala)
-trait$L_Cola<-log(trait$L_Cola)
-trait$L_Hallux<-log(trait$L_Hallux)
 
 
-####Comunidades####
+
+####Communities####
 
 #set working directory to folder containing distribution maps
 setwd(maps_folder)
@@ -239,6 +234,21 @@ head(trait)
 summary(trait)
 traitnb=dim(trait)[2]-1 #Number of traits, minus 1 because the first column contains species names
 spnb=dim(trait)[1] #Number of species (one species per row thus number of species=number of rows)
+
+#log transform all variables in trait. This depends on the traits being used! Names must be changed according to trait matrix!
+#trait$L_Culmen_expuesto<-log(trait$L_Culmen_expuesto)
+#trait$Ancho_Pico<-log(trait$Ancho_Pico)
+#trait$L_Ala<-log(trait$L_Ala)
+#trait$L_Cola<-log(trait$L_Cola)
+#trait$L_Hallux<-log(trait$L_Hallux)
+######This last part can ba automated however!##############
+###### Must ensure that all variables ARE NUMERIC! and NO 0 values##########
+
+for (i in 2:traitnb)
+{
+trait[,i]<-log(trait[,i]) ## This could be updated to another mathematic transformation if needed
+}
+
 
 traitc=trait[,2:traitnb] #Select only columns containign trait info and not species names
 traitcn=apply(traitc,2,as.numeric) #Ensure all trait values are numeric
