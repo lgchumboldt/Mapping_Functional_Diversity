@@ -17,28 +17,26 @@ library(rgdal)
 
 
 {# set working directory
-print("Directorio de trabajo:")
-directorio_trabajo<-choose.dir()
-setwd(directorio_trabajo)
+print("Choose your working directory:")
+working_directory<-choose.dir()
+setwd(working_directory)
 
 #Select folder containing distribution maps
-print("Seleccione la carpeta que contiene los mapas de distribuci�n")
-carpeta_mapas<-choose.dir()
+print("Choose de folder containing distribution maps")
+maps_folder<-choose.dir()
 
 #Select folder to store functional diversity and taxonomic diversity maps
-print("Seleccione la carpeta qdonde guardar los mapas de diversidad funcional y de riqueza de especies: ")
-guardar_archivos<-choose.dir()
+print("Select the folder where both the fucntional diversity and species richness maps will be stored: ")
+save_files<-choose.dir()
 
 #Trait data: select file containing trait data
-print("Seleccione el archivo de rasgos:")
+print("Select the file with the functional characters:")
 trait=read.csv(file.choose())
 
-#Especificar n�mero de rasgos a utilizar
+#Select the mask to be used in the analysis. The mask must be in a shapefile format, *.shp (Colombia, Paramos , cordilleras etc.)
+mask1<-file.choose()
 
-#Seleccionar la mascara a utilizar que debe estar en formato de shapefile, .shp (Colombia, Paramos , cordilleras etc.)
-mascara1<-file.choose()
-
-#Determinar nombre de archivos de salida
+#Chose the names for the output files
 mapa_filodiversidad<-readline("Nombre del mapa de filodiversidad: sin espacios y con extensi�n .asc (Ej: Diversidad_funcional.asc): ")
 
 riqueza_especies<-readline("Nombre del mapa de riqueza de especies: sin espacios y con extensi�n .asc (Ej:Riqueza_especies.asc): ")
@@ -205,25 +203,25 @@ spnb=dim(trait)[1]
 ####Comunidades####
 
 #set working directory to folder containing distribution maps
-setwd(carpeta_mapas)
+setwd(maps_folder)
 
 #Determine folder containing distribution maps and generate list of species
-distribution_maps_folder<-carpeta_mapas
+distribution_maps_folder<-maps_folder
 distribution_files<-list.files(path=distribution_maps_folder, pattern= "*.shp$")
 species_names<-sub(".shp","",distribution_files)
 tabla<-as.data.frame(species_names)
 colnames(tabla)<-"Grilla"
 
 #Read polygon with mask
-mascara<-readShapePoly(mascara1)
+mask<-readShapePoly(mask1)
 
 #Determine working resolution
-resolucion<-as.numeric(res)
+resolution<-as.numeric(res)
 
 #Load all distribution maps and rasterize
 r<-raster(ncol=1462,nrow=624)
-res(r)<-resolucion #resolution
-r<-crop(r,extent(mascara))
+res(r)<-resolution #resolution
+r<-crop(r,extent(mask))
 grilla=r
 names(grilla)="grilla"
 grilla[1:ncell(grilla)]<-1:ncell(grilla)
@@ -261,12 +259,12 @@ for (i in 1:length(Community)) {
 marco$fd<-FD[,2]
 
 r<-raster(ncol=1462,nrow=624)
-res(r)<-resolucion
-r<-crop(r,extent(mascara))
+res(r)<-resolution
+r<-crop(r,extent(mask))
 values(r)<-0
 map<-readOGR(dsn=distribution_maps_folder,layer=species_names[[1]])
 r<-rasterize(map,r,map$PRESENCE,update=T)
-r<-mask(r,mascara)
+r<-mask(r,mask)
 fd_ras<-r
 values(fd_ras)<-NA #se eliminan todos los valores del modelo de distribuci�n
 
@@ -287,7 +285,7 @@ plot(fd_ras, main="Diversidad Funcional")
 plot(TD, main="Riqueza de especies")
 
 #Write rasters (FD and TD) to file
-setwd(guardar_archivos)
+setwd(save_files)
 writeRaster(fd_ras,mapa_filodiversidad)
 writeRaster(TD,riqueza_especies)
 
