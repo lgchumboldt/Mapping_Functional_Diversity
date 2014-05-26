@@ -40,7 +40,7 @@ mask1<-file.choose()
 functional_diversity_map<-readline("Name of the functional diversity map: NO spaces and INCLUDE extension, .asc (Ej: Functional_diversity.asc): ")
 
 species_richness<-readline("Name of the species richness map: NO spaces and INCLUDE extension (Ej: Species_richness.asc): ")
-#Determinar resolucion
+#Determine working resolution
 res<-readline("Raster resolution: ")
 }
 
@@ -186,19 +186,13 @@ rasterize_species= function (x,mask=mascara) {
 #######################################
 ### Script begins ###
 ######################################
-#log transform all variables in trait
+#log transform all variables in trait. This depends on the traits being used! Names must be changed according to trait matrix!
 trait$L_Culmen_expuesto<-log(trait$L_Culmen_expuesto)
 trait$Ancho_Pico<-log(trait$Ancho_Pico)
 trait$L_Ala<-log(trait$L_Ala)
 trait$L_Cola<-log(trait$L_Cola)
 trait$L_Hallux<-log(trait$L_Hallux)
-# Trait data: select file containing trait data
 
-str(trait)
-head(trait)
-summary(trait)
-traitnb=dim(trait)[2]-1
-spnb=dim(trait)[1]
 
 ####Comunidades####
 
@@ -240,16 +234,22 @@ marco=na.omit(marco)
 
 # Select traits
 
-traitc=trait[,2:6]
-traitcn=apply(traitc,2,as.numeric)
+str(trait)
+head(trait)
+summary(trait)
+traitnb=dim(trait)[2]-1 #Number of traits, minus 1 because the first column contains species names
+spnb=dim(trait)[1] #Number of species (one species per row thus number of species=number of rows)
+
+traitc=trait[,2:traitnb] #Select only columns containign trait info and not species names
+traitcn=apply(traitc,2,as.numeric) #Ensure all trait values are numeric
 
 # Calculate FRic, FEve, FDiv and FSpe
 
-FD=as.numeric()
+FD=as.numeric() #Create an empty vector to store functional diversity data
 Community=unique(marco$Grilla)
 
 for (i in 1:length(Community)) {
-  abund.i=marco[marco$Grilla==Community[i],1:250]
+  abund.i=marco[marco$Grilla==Community[i],1:spnb]
   abundm.i=as.matrix(abund.i)
   FD.i=FDind(traitcn,abundm.i)
   FD=rbind(FD,FD.i)
@@ -266,10 +266,9 @@ map<-readOGR(dsn=distribution_maps_folder,layer=species_names[[1]])
 r<-rasterize(map,r,map$PRESENCE,update=T)
 r<-mask(r,mask)
 fd_ras<-r
-values(fd_ras)<-NA #se eliminan todos los valores del modelo de distribuci�n
+values(fd_ras)<-NA # Erase alll values from the distribution map
 
-
-#Asignar al raster los valores de PD que corresponden a cada pixel
+#Assign to the empty raster the values of FD that correspond to each pixel
 fd_ras[marco$Grilla]<-marco$fd
 
 
@@ -281,8 +280,8 @@ TD<-calc(aves_col,sum)
 #Plot both maps in R to the left functional diversity and to the right taxonomic diversity
 par(mfrow=c(1,2))
 
-plot(fd_ras, main="Diversidad Funcional")
-plot(TD, main="Riqueza de especies")
+plot(fd_ras, main="Functional Diversity")
+plot(TD, main="Species Richness")
 
 #Write rasters (FD and TD) to file
 setwd(save_files)
