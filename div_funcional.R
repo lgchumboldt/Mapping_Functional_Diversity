@@ -26,7 +26,7 @@ print("Choose de folder containing distribution maps")
 maps_folder<-choose.dir()
 
 #Select folder to store functional diversity and taxonomic diversity maps
-print("Select the folder where both the fucntional diversity and species richness maps will be stored: ")
+print("Select the folder where both the functional diversity and species richness maps will be stored: ")
 save_files<-choose.dir()
 
 #Trait data: select file containing trait data
@@ -37,11 +37,11 @@ trait=read.csv(file.choose())
 mask1<-file.choose()
 
 #Chose the names for the output files
-mapa_filodiversidad<-readline("Nombre del mapa de filodiversidad: sin espacios y con extensi�n .asc (Ej: Diversidad_funcional.asc): ")
+functional_diversity_map<-readline("Name of the functional diversity map: NO spaces and INCLUDE extension, .asc (Ej: Functional_diversity.asc): ")
 
-riqueza_especies<-readline("Nombre del mapa de riqueza de especies: sin espacios y con extensi�n .asc (Ej:Riqueza_especies.asc): ")
+species_richness<-readline("Name of the species richness map: NO spaces and INCLUDE extension (Ej: Species_richness.asc): ")
 #Determinar resolucion
-res<-readline("Resolucion de raster: ")
+res<-readline("Raster resolution: ")
 }
 
 
@@ -286,8 +286,8 @@ plot(TD, main="Riqueza de especies")
 
 #Write rasters (FD and TD) to file
 setwd(save_files)
-writeRaster(fd_ras,mapa_filodiversidad)
-writeRaster(TD,riqueza_especies)
+writeRaster(fd_ras,functional_diversity_map)
+writeRaster(TD,species_richness)
 
 
 
