@@ -220,11 +220,12 @@ layers<-lapply(species_names,rasterize_species)
 names(layers)<-as.vector(tabla$Grilla)
 layers[sapply(layers,is.null)]<-NULL
 lista_completa<-c(lista_grilla,layers)
-Stack<-stack(lista_completa)
 
+Stack<-stack(lista_completa)
 #Turn maps into dataframe for computation of FD
 marco<-as.data.frame(Stack)
 marco=na.omit(marco)
+species_names<-colnames(marco)[2:length(marco)] #Store species names
 
 
 # Select traits
@@ -253,8 +254,13 @@ trait[,i]<-log(trait[,i]) ## This could be updated to another mathematic transfo
 traitc=trait[,2:traitnb] #Select only columns containign trait info and not species names
 traitcn=apply(traitc,2,as.numeric) #Ensure all trait values are numeric
 
-# Calculate FRic, FEve, FDiv and FSpe
 
+###Confirm number of species with map=number of species with traits
+####Confirm names of species with map are the same as names of species with traits
+differences<-setdiff(trait[,1],species_names)
+
+# Calculate FRic, FEve, FDiv and FSpe
+if (length(differences!=0)){
 FD=as.numeric() #Create an empty vector to store functional diversity data
 Community=unique(marco$Grilla)
 
@@ -298,7 +304,8 @@ setwd(save_files)
 writeRaster(fd_ras,functional_diversity_map)
 writeRaster(TD,species_richness)
 
-
+}
+else print("las especies de los rasgos no corresponden con las especies de los mapas, la lista muestras las especies de la tabla de rasgos que no encuentran correspondencia en los mapas");differences
 
 
 
