@@ -1,7 +1,7 @@
 rm(list=ls())
-###################
-###load packages###
-###################
+########################################################################################################################
+###############################################I-Load packages##########################################################
+#########################################################################################################################
 
 library(ade4)
 library(ape)
@@ -11,18 +11,18 @@ library(maptools)
 library(raster)
 library(rgdal)
 
-#########################################################################
-### Read data necessary for script and set user determined properties ###
-#########################################################################
+########################################################################################################################
+#########################II-Read data necessary for script and set user determined properties############################
+########################################################################################################################
 
 
-# set working directory
+{# set working directory
 print("Directorio de trabajo:")
 directorio_trabajo<-choose.dir()
 setwd(directorio_trabajo)
 
 #Select folder containing distribution maps
-print("Seleccione la carpeta que contiene los mapas de distribución")
+print("Seleccione la carpeta que contiene los mapas de distribuciï¿½n")
 carpeta_mapas<-choose.dir()
 
 #Select folder to store functional diversity and taxonomic diversity maps
@@ -33,46 +33,33 @@ guardar_archivos<-choose.dir()
 print("Seleccione el archivo de rasgos:")
 trait=read.csv(file.choose())
 
-#Especificar número de rasgos a utilizar
+#Especificar nï¿½mero de rasgos a utilizar
 
 #Seleccionar la mascara a utilizar que debe estar en formato de shapefile, .shp (Colombia, Paramos , cordilleras etc.)
 mascara1<-file.choose()
 
 #Determinar nombre de archivos de salida
-mapa_filodiversidad<-readline("Nombre del mapa de filodiversidad: sin espacios y con extensión .asc (Ej: Diversidad_funcional.asc): ")
+mapa_filodiversidad<-readline("Nombre del mapa de filodiversidad: sin espacios y con extensiï¿½n .asc (Ej: Diversidad_funcional.asc): ")
 
-riqueza_especies<-readline("Nombre del mapa de riqueza de especies: sin espacios y con extensión .asc (Ej:Riqueza_especies.asc): ")
+riqueza_especies<-readline("Nombre del mapa de riqueza de especies: sin espacios y con extensiï¿½n .asc (Ej:Riqueza_especies.asc): ")
 #Determinar resolucion
 res<-readline("Resolucion de raster: ")
-#######################################
-### Script begins ###
-######################################
-#log transform all variables in trait
-trait$L_Culmen_expuesto<-log(trait$L_Culmen_expuesto)
-trait$Ancho_Pico<-log(trait$Ancho_Pico)
-trait$L_Ala<-log(trait$L_Ala)
-trait$L_Cola<-log(trait$L_Cola)
-trait$L_Hallux<-log(trait$L_Hallux)
-# Trait data: select file containing trait data
-
-str(trait)
-head(trait)
-summary(trait)
-traitnb=dim(trait)[2]-1
-spnb=dim(trait)[1]
+}
 
 
+###############################################################################################################
+########################################III-Definition of functions to be used#####################################
+###############################################################################################################
 
 
-################################################################
-### Function: Functional diversity (FRic, FEve, FDiv, FSpe)  ###
-################################################################
+### 1- Function: Functional diversity (FRic, FEve, FDiv, FSpe)  ###
 
-### Author: Sebastien Villéger, adapted by Claire Fortunel (Please acknowledge as appropriate)  
 
-#  Notations corresponds with Villéger et al. (2008) Ecology, 89: 2290-2301 for FRic, FEve, FDiv; and Bellwood et al. (2006) Proc. R. Soc. B., 273: 101-107 for FSpe
+### Author: Sebastien Villï¿½ger, adapted by Claire Fortunel (Please acknowledge as appropriate)  
 
-# Function to calculate the four Functional diversity indices
+#  Notations corresponds with Villï¿½ger et al. (2008) Ecology, 89: 2290-2301 for FRic, FEve, FDiv; and Bellwood et al. (2006) Proc. R. Soc. B., 273: 101-107 for FSpe
+
+# Function to calculate the four Functional diversity indices (So far we only use the FRic index since no abundance data is available from distribution maps)
 
 FDind=function(trait,abund) {
   # T = number of traits
@@ -170,65 +157,7 @@ FDind=function(trait,abund) {
 }# end of function
 
 
-#####################################################################
-### Function: FD Petchey  ###
-#####################################################################
-
-Xtree <- function(h)
-  ## evaluate species branch matrix (sensu Petchey&Gaston) from a dendrogram
-  ## tested for results of hclust and agnes
-  ## hclust - hierarchical clustering 
-  ## agnes - agglomerative clustering
-  
-  ## used components:
-  ## merge - history of cluster merging
-  ## height - actual heights at merging
-  ## order - permutation to achieve nice output (needed only for agnes)
-{
-  
-  species.names <- h$labels
-  
-  
-  H1 <- matrix(0, length(h$order), 2 * length(h$order) - 2)
-  l <- vector("numeric", 2 * length(h$order) - 2)
-  for(i in 1:(length(h$order) - 1)) {
-    # evaluate branch lengths
-    #
-    if(h$merge[i, 1] < 0) {
-      l[2 * i - 1] <- h$height[order(h$height)[i]]
-      H1[ - h$merge[i, 1], 2 * i - 1] <- 1
-    }
-    else {
-      l[2 * i - 1] <- h$height[order(h$height)[i]] - h$height[order(h$height)[h$merge[i, 1]]]
-      H1[, 2 * i - 1] <- H1[, 2 * h$merge[i, 1] - 1] + H1[
-        , 2 * h$merge[i, 1]]
-    }
-    if(h$merge[i, 2] < 0) {
-      l[2 * i] <- h$height[order(h$height)[i]]
-      H1[ - h$merge[i, 2], 2 * i] <- 1
-    }
-    else {
-      l[2 * i] <- h$height[order(h$height)[i]] - h$height[order(h$height)[h$merge[i, 2]]]
-      H1[, 2 * i] <- H1[, 2 * h$merge[i, 2] - 1] + H1[, 2 *
-                                                        h$merge[i, 2]]
-    }
-  }
-  dimnames(H1) <- list(species.names,NULL)  
-  list(h2.prime=l, H1=H1)
-  ## l contains the length of all the tiny branches
-  ## H1: each row represents one species, each column represents one branch
-  ##     1 indicates that a branch is part of the pathway from species to top of the dendrogram
-  ##     0 otherwise
-}
-
-
-
-
-
-
-#####################################################################
-### Function: Rasterize distribution maps and cut to mask extent  ###
-#####################################################################
+### 2- Function: Rasterize distribution maps and cut to mask extent  ###
 
 rasterize_species= function (x,mask=mascara) {
   r<-raster(ncol=1462,nrow=624)
@@ -251,9 +180,27 @@ rasterize_species= function (x,mask=mascara) {
   }
 }#end of function
 
-############################################
-###Genarate a map of Functional Diversity###
-############################################
+####################################################################################################################
+########################################IV- Genarate a map of Functional Diversity######################################
+####################################################################################################################
+
+
+#######################################
+### Script begins ###
+######################################
+#log transform all variables in trait
+trait$L_Culmen_expuesto<-log(trait$L_Culmen_expuesto)
+trait$Ancho_Pico<-log(trait$Ancho_Pico)
+trait$L_Ala<-log(trait$L_Ala)
+trait$L_Cola<-log(trait$L_Cola)
+trait$L_Hallux<-log(trait$L_Hallux)
+# Trait data: select file containing trait data
+
+str(trait)
+head(trait)
+summary(trait)
+traitnb=dim(trait)[2]-1
+spnb=dim(trait)[1]
 
 ####Comunidades####
 
@@ -321,7 +268,7 @@ map<-readOGR(dsn=distribution_maps_folder,layer=species_names[[1]])
 r<-rasterize(map,r,map$PRESENCE,update=T)
 r<-mask(r,mascara)
 fd_ras<-r
-values(fd_ras)<-NA #se eliminan todos los valores del modelo de distribución
+values(fd_ras)<-NA #se eliminan todos los valores del modelo de distribuciï¿½n
 
 
 #Asignar al raster los valores de PD que corresponden a cada pixel
