@@ -1,17 +1,25 @@
+##################################
+#####Load required packages######
+#################################
+
 library(maptools)
 library(raster)
 library(rgdal)
+###############################
+####Load areas for analysis####
+###############################
 
-#Cargar paramos
-ruta_paramos<-"C:\\Users\\GIC 40\\Documents\\Andrea\\SIG\\Colombia\\paramos"
-paramos<-readOGR(dsn=ruta_paramos,layer="paramos_project_2012")
-#Cargar Colombia
-colombia_shape<-"C:\\Users\\GIC 66\\Documents\\Andrea\\SIG\\Colombia\\adm"
-colombia<-readOGR(dsn=colombia_shape,layer="COL_adm0")
-#Cargar cordilleras (cortado por encima de 2600m)
-cordillera<-"C:\\Users\\GIC 66\\Documents\\Andrea\\SIG\\Colombia\\cordillera\\cordillera.shp"
-cordillera<-readShapePoly(cordillera)
-#Cargar Raster FD, TD 
+    #Cargar paramos
+    ruta_paramos<-"C:\\Users\\GIC 40\\Documents\\Andrea\\SIG\\Colombia\\paramos"
+    paramos<-readOGR(dsn=ruta_paramos,layer="paramos_project_2012")
+    #Cargar Colombia
+    colombia_shape<-"C:\\Users\\GIC 66\\Documents\\Andrea\\SIG\\Colombia\\adm"
+    colombia<-readOGR(dsn=colombia_shape,layer="COL_adm0")
+    #Cargar cordilleras (cortado por encima de 2600m)
+    cordillera<-"C:\\Users\\GIC 66\\Documents\\Andrea\\SIG\\Colombia\\cordillera\\cordillera.shp"
+    cordillera<-readShapePoly(cordillera)
+    
+#Load rasters of Functional Diversity and Species richness
     #AVES
 Fd_aves<-raster("C:\\Users\\GIC 66\\Documents\\Andrea\\Proyectos\\Diversidad_funcional\\riqueza_17marzo\\por_complejos\\sumas\\riqueza_funcional_por_complejo.asc")
 Td_aves<-raster("C:\\Users\\GIC 66\\Documents\\Andrea\\Proyectos\\Diversidad_funcional\\riqueza_17marzo\\por_complejos\\sumas\\riqueza_especies_por_complejo.asc")
@@ -23,7 +31,7 @@ marco_Td_aves<-as.data.frame(Td_aves)
 marco_aves<-data.frame(marco_Fd_aves$riqueza_funcional_por_complejo,marco_Td_aves$riqueza_especies_por_complejo)
 
 
-#Generar modelos de regresión 
+#Generar modelos de regresiï¿½n 
   #LINEAL
   modelo_lineal<-lm(marco_aves)
   #LOESS
@@ -37,15 +45,10 @@ marco_aves<-data.frame(marco_Fd_aves$riqueza_funcional_por_complejo,marco_Td_ave
 #Agregar los resiudales al marco de datos
 marco_aves$residuos_Fd_lineal<-rep(NA,length(marco_aves[,1]))
 marco_aves$residuos_Fd_lineal[as.numeric(names(residuos_lineal))]<-residuos_lineal[names(residuos_lineal)]
-for(i in unique(as.numeric(names(residuos_lineal)))){
-  marco_aves$residuos_Fd_lineal[i]<-residuos_lineal[as.character(i)]
-}
 
 marco_aves$residuos_Fd_loess<-rep(NA,length(marco_aves[,1]))
 marco_aves$residuos_Fd_loess[as.numeric(names(residuos_loess))]<-residuos_loess[names(residuos_loess)]
-for(i in unique(as.numeric(names(residuos_loess)))){
-  marco_aves$residuos_Fd_loess[i]<-residuos_loess[as.character(i)]
-}
+
 #Generar rasters con los datos de residuos
 
 Fd_aves<-raster("C:\\Users\\GIC 66\\Documents\\Andrea\\Proyectos\\Diversidad_funcional\\riqueza_17marzo\\por_complejos\\sumas\\riqueza_funcional_por_complejo.asc")
@@ -65,27 +68,27 @@ writeRaster(residuos_loess_raster,"C:\\Users\\GIC 66\\Documents\\Andrea\\Proyect
 
 
 
-#Graficas y mapas
-  #Regresiones
+#Graphs and maps    
+  #Regressions
   par(mfrow=c(2,2),mar=c(4,4,3,3))
 
-  plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$marco_Fd_aves.riqueza_funcional_por_complejo,xlab="Número de especies",ylab="Diversidad funcional", main="Regresión lineal")
+  plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$marco_Fd_aves.riqueza_funcional_por_complejo,xlab="Nï¿½mero de especies",ylab="Diversidad funcional", main="Regresiï¿½n lineal")
   abline(modelo_lineal,col="red")
-  plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$marco_Fd_aves.riqueza_funcional_por_complejo,xlab="Número de especies",ylab="Diversidad funcional", main="Regresión loess")
+  plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$marco_Fd_aves.riqueza_funcional_por_complejo,xlab="Nï¿½mero de especies",ylab="Diversidad funcional", main="Regresiï¿½n loess")
   Td_vals<-seq(0,600,1)
   loess_vals<-predict(modelo_loess,Td_vals)
   lines(loess_vals ~ Td_vals,col="red")
 
-#Residuos
+#Residuals
 
-plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$residuos_Fd_lineal,xlab="Número de especies",ylab="Residuos diversidad funcional")
+plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$residuos_Fd_lineal,xlab="Number of species",ylab="Residuals of functional diversity")
 abline(0,0)
-plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$residuos_Fd_loess,xlab="Número de especies",ylab="Residuos diversidad funcional")
+plot(marco_aves$marco_Td_aves.riqueza_especies_por_complejo,marco_aves$residuos_Fd_loess,xlab="Number of species",ylab="Residuals of functional diversity")
 abline(0,0)
 
-#Mapas
+#Maps
 par(mfrow=c(1,1))
-plot(colombia,main="Regresión Lineal")
+plot(colombia,main="Linear regression")
 plot(residuos_lineal_raster,box=F,axes=F,add=T)
-plot(colombia, main="Regresi+on Loess")
+plot(colombia, main="Loess regression")
 plot(residuos_loess_raster,box=F,axes=F,add=T)
